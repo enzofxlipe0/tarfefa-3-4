@@ -1,0 +1,127 @@
+import discord
+import random
+from bot import gen_pass
+
+intents = discord.Intents.default()
+intents.message_content = True
+
+client = discord.Client(intents=intents)
+
+# =========================
+# VARIÁVEIS DOS JOGOS
+# =========================
+jogo_ativo = False
+tabuleiro = ["⬜"] * 9
+jogador_atual = "❌"
+
+numero_secreto = random.randint(1, 10)
+
+# =========================
+# FUNÇÕES
+# =========================
+def mostrar_tabuleiro():
+    return f"""
+{tabuleiro[0]} {tabuleiro[1]} {tabuleiro[2]}
+{tabuleiro[3]} {tabuleiro[4]} {tabuleiro[5]}
+{tabuleiro[6]} {tabuleiro[7]} {tabuleiro[8]}
+"""
+
+def verificar_vitoria():
+    vitorias = [
+        (0,1,2),(3,4,5),(6,7,8),
+        (0,3,6),(1,4,7),(2,5,8),
+        (0,4,8),(2,4,6)
+    ]
+    for a,b,c in vitorias:
+        if tabuleiro[a] == tabuleiro[b] == tabuleiro[c] and tabuleiro[a] != "⬜":
+            return True
+    return False
+
+# =========================
+# EVENTOS
+# =========================
+@client.event
+async def on_ready():
+    print(f'Logado como {client.user}')
+
+@client.event
+async def on_message(message):
+    global jogo_ativo, tabuleiro, jogador_atual, numero_secreto
+
+    if message.author == client.user:
+        return
+
+    # =========================
+    # COMANDOS BÁSICOS
+    # =========================
+    if message.content.startswith('$hello'):
+        await message.channel.send("Hello!")
+
+    elif message.content.startswith('$bye'):
+        await message.channel.send("🙂")
+
+    elif message.content.startswith('$senha'):
+        await message.channel.send(gen_pass(10))
+
+    # =========================
+    # JOGO DA VELHA
+    # =========================
+    elif message.content.startswith('$velha'):
+        jogo_ativo = True
+        tabuleiro = ["⬜"] * 9
+        jogador_atual = "❌"
+        await message.channel.send("🎮 Jogo da velha começou!")
+        await message.channel.send(mostrar_tabuleiro())
+        await message.channel.send("Digite um número de 0 a 8")
+
+    elif jogo_ativo and message.content.isdigit():
+        pos = int(message.content)
+
+        if pos < 0 or pos > 8:
+            await message.channel.send("Escolhe de 0 a 8!")
+            return
+
+        if tabuleiro[pos] != "⬜":
+            await message.channel.send("Posição ocupada!")
+            return
+
+        tabuleiro[pos] = jogador_atual
+
+        if verificar_vitoria():
+            await message.channel.send(mostrar_tabuleiro())
+            await message.channel.send(f"🎉 {jogador_atual} venceu!")
+            jogo_ativo = False
+            return
+
+        if "⬜" not in tabuleiro:
+            await message.channel.send(mostrar_tabuleiro())
+            await message.channel.send("😐 Deu velha!")
+            jogo_ativo = False
+            return
+
+        jogador_atual = "⭕" if jogador_atual == "❌" else "❌"
+
+        await message.channel.send(mostrar_tabuleiro())
+        await message.channel.send(f"Vez de {jogador_atual}")
+
+    # =========================
+    # JOGO DE ADIVINHAÇÃO
+    # =========================
+    elif message.content.startswith('$adivinhar'):
+        numero_secreto = random.randint(1, 10)
+        await message.channel.send("🎲 Tente adivinhar de 1 a 10!")
+
+    elif message.content.isdigit():
+        palpite = int(message.content)
+
+        if palpite == numero_secreto:
+            await message.channel.send("🎉 Acertou!")
+        elif palpite < numero_secreto:
+            await message.channel.send("🔼 Maior!")
+        else:
+            await message.channel.send("🔽 Menor!")
+
+# =========================
+# RODAR BOT
+# =========================
+client.run("MTQ5Mzc1NTI1ODQ3ODc5Mjg4Ng.GsiDfp.UzGj1U9UCWpX4K3Q35UYQz8FxxD6VQ9LNqsdXA")
