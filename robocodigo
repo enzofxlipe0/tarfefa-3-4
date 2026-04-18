@@ -8,13 +8,18 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 # =========================
-# VARIÁVEIS DOS JOGOS
+# VARIÁVEIS
 # =========================
 jogo_ativo = False
 tabuleiro = ["⬜"] * 9
-jogador_atual = "❌"
 
 numero_secreto = random.randint(1, 10)
+
+piadas = [
+    "Por que o computador foi ao médico? Porque estava com vírus 😂",
+    "Por que o programador confunde Halloween com Natal? Porque OCT 31 == DEC 25 🤓",
+    "O que o zero disse para o oito? Belo cinto! 😆"
+]
 
 # =========================
 # FUNÇÕES
@@ -37,6 +42,10 @@ def verificar_vitoria():
             return True
     return False
 
+def jogada_bot():
+    livres = [i for i, v in enumerate(tabuleiro) if v == "⬜"]
+    return random.choice(livres) if livres else None
+
 # =========================
 # EVENTOS
 # =========================
@@ -46,13 +55,13 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    global jogo_ativo, tabuleiro, jogador_atual, numero_secreto
+    global jogo_ativo, tabuleiro, numero_secreto
 
     if message.author == client.user:
         return
 
     # =========================
-    # COMANDOS BÁSICOS
+    # COMANDOS
     # =========================
     if message.content.startswith('$hello'):
         await message.channel.send("Hello!")
@@ -63,16 +72,19 @@ async def on_message(message):
     elif message.content.startswith('$senha'):
         await message.channel.send(gen_pass(10))
 
+    # 🎭 PIADAS
+    elif message.content.startswith('$piada'):
+        await message.channel.send(random.choice(piadas))
+
     # =========================
-    # JOGO DA VELHA
+    # JOGO DA VELHA (vs BOT)
     # =========================
     elif message.content.startswith('$velha'):
         jogo_ativo = True
         tabuleiro = ["⬜"] * 9
-        jogador_atual = "❌"
-        await message.channel.send("🎮 Jogo da velha começou!")
+        await message.channel.send("🎮 Jogo da velha contra o BOT!")
         await message.channel.send(mostrar_tabuleiro())
-        await message.channel.send("Digite um número de 0 a 8")
+        await message.channel.send("Sua vez! Escolha de 0 a 8")
 
     elif jogo_ativo and message.content.isdigit():
         pos = int(message.content)
@@ -85,27 +97,42 @@ async def on_message(message):
             await message.channel.send("Posição ocupada!")
             return
 
-        tabuleiro[pos] = jogador_atual
+        # Jogador
+        tabuleiro[pos] = "❌"
 
         if verificar_vitoria():
             await message.channel.send(mostrar_tabuleiro())
-            await message.channel.send(f"🎉 {jogador_atual} venceu!")
+            await message.channel.send("🎉 Você venceu!")
             jogo_ativo = False
             return
 
         if "⬜" not in tabuleiro:
             await message.channel.send(mostrar_tabuleiro())
-            await message.channel.send("😐 Deu velha!")
+            await message.channel.send("😐 Empate!")
             jogo_ativo = False
             return
 
-        jogador_atual = "⭕" if jogador_atual == "❌" else "❌"
+        # Bot
+        bot_pos = jogada_bot()
+        tabuleiro[bot_pos] = "⭕"
+
+        if verificar_vitoria():
+            await message.channel.send(mostrar_tabuleiro())
+            await message.channel.send("🤖 O bot venceu!")
+            jogo_ativo = False
+            return
+
+        if "⬜" not in tabuleiro:
+            await message.channel.send(mostrar_tabuleiro())
+            await message.channel.send("😐 Empate!")
+            jogo_ativo = False
+            return
 
         await message.channel.send(mostrar_tabuleiro())
-        await message.channel.send(f"Vez de {jogador_atual}")
+        await message.channel.send("Sua vez!")
 
     # =========================
-    # JOGO DE ADIVINHAÇÃO
+    # ADIVINHAÇÃO
     # =========================
     elif message.content.startswith('$adivinhar'):
         numero_secreto = random.randint(1, 10)
@@ -122,6 +149,6 @@ async def on_message(message):
             await message.channel.send("🔽 Menor!")
 
 # =========================
-# RODAR BOT
+# RUN
 # =========================
-client.run("MTQ5Mzc1NTI1ODQ3ODc5Mjg4Ng.GsiDfp.UzGj1U9UCWpX4K3Q35UYQz8FxxD6VQ9LNqsdXA")
+client.run("token aqui")
