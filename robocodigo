@@ -12,13 +12,17 @@ client = discord.Client(intents=intents)
 # =========================
 jogo_ativo = False
 tabuleiro = ["⬜"] * 9
-
 numero_secreto = random.randint(1, 10)
 
 piadas = [
     "Por que o computador foi ao médico? Porque estava com vírus 😂",
     "Por que o programador confunde Halloween com Natal? Porque OCT 31 == DEC 25 🤓",
-    "O que o zero disse para o oito? Belo cinto! 😆"
+    "O que o zero disse para o oito? Belo cinto! 😆",
+    "Por que a internet foi ao psicólogo? Porque tinha muitos problemas de conexão 😅",
+    "Qual é o café favorito do programador? Java ☕",
+    "Por que o celular foi pra escola? Pra ficar mais inteligente 📱",
+    "O que o computador disse pro usuário? Você não tem permissão 😂",
+    "Por que o livro de matemática ficou triste? Porque tinha muitos problemas 😢"
 ]
 
 # =========================
@@ -60,34 +64,81 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    texto = message.content.lower()
+
+    # =========================
+    # CONVERSAS
+    # =========================
+    if texto == 'oi':
+        await message.channel.send("Oi! Tudo bem? 😄")
+
+    elif texto == 'tudo bem':
+        await message.channel.send("Tudo ótimo! E você?")
+
+    elif texto == 'qual seu nome':
+        await message.channel.send("Eu sou um bot 😎")
+
+    elif 'bom dia' in texto:
+        await message.channel.send("Bom dia! ☀️")
+
+    elif 'boa noite' in texto:
+        await message.channel.send("Boa noite! 🌙")
+
     # =========================
     # COMANDOS
     # =========================
-    if message.content.startswith('$hello'):
+    elif texto.startswith('$hello'):
         await message.channel.send("Hello!")
 
-    elif message.content.startswith('$bye'):
+    elif texto.startswith('$bye'):
         await message.channel.send("🙂")
 
-    elif message.content.startswith('$senha'):
+    elif texto.startswith('$senha'):
         await message.channel.send(gen_pass(10))
 
-    # 🎭 PIADAS
-    elif message.content.startswith('$piada'):
+    elif texto.startswith('$piada'):
         await message.channel.send(random.choice(piadas))
 
     # =========================
-    # JOGO DA VELHA (vs BOT)
+    # PEDRA PAPEL TESOURA
     # =========================
-    elif message.content.startswith('$velha'):
+    elif texto.startswith('$ppt'):
+        opcoes = ["pedra", "papel", "tesoura"]
+        escolha_bot = random.choice(opcoes)
+
+        try:
+            escolha_user = texto.split(" ")[1]
+        except:
+            await message.channel.send("Use: $ppt pedra/papel/tesoura")
+            return
+
+        if escolha_user not in opcoes:
+            await message.channel.send("Escolha inválida!")
+            return
+
+        if escolha_user == escolha_bot:
+            resultado = "Empate 😐"
+        elif (escolha_user == "pedra" and escolha_bot == "tesoura") or \
+             (escolha_user == "papel" and escolha_bot == "pedra") or \
+             (escolha_user == "tesoura" and escolha_bot == "papel"):
+            resultado = "Você venceu 🎉"
+        else:
+            resultado = "Bot venceu 🤖"
+
+        await message.channel.send(f"Você: {escolha_user}\nBot: {escolha_bot}\n{resultado}")
+
+    # =========================
+    # JOGO DA VELHA (VS BOT)
+    # =========================
+    elif texto.startswith('$velha'):
         jogo_ativo = True
         tabuleiro = ["⬜"] * 9
         await message.channel.send("🎮 Jogo da velha contra o BOT!")
         await message.channel.send(mostrar_tabuleiro())
-        await message.channel.send("Sua vez! Escolha de 0 a 8")
+        await message.channel.send("Escolha de 0 a 8")
 
-    elif jogo_ativo and message.content.isdigit():
-        pos = int(message.content)
+    elif jogo_ativo and texto.isdigit():
+        pos = int(texto)
 
         if pos < 0 or pos > 8:
             await message.channel.send("Escolhe de 0 a 8!")
@@ -97,7 +148,6 @@ async def on_message(message):
             await message.channel.send("Posição ocupada!")
             return
 
-        # Jogador
         tabuleiro[pos] = "❌"
 
         if verificar_vitoria():
@@ -112,34 +162,26 @@ async def on_message(message):
             jogo_ativo = False
             return
 
-        # Bot
         bot_pos = jogada_bot()
         tabuleiro[bot_pos] = "⭕"
 
         if verificar_vitoria():
             await message.channel.send(mostrar_tabuleiro())
-            await message.channel.send("🤖 O bot venceu!")
-            jogo_ativo = False
-            return
-
-        if "⬜" not in tabuleiro:
-            await message.channel.send(mostrar_tabuleiro())
-            await message.channel.send("😐 Empate!")
+            await message.channel.send("🤖 Bot venceu!")
             jogo_ativo = False
             return
 
         await message.channel.send(mostrar_tabuleiro())
-        await message.channel.send("Sua vez!")
 
     # =========================
     # ADIVINHAÇÃO
     # =========================
-    elif message.content.startswith('$adivinhar'):
+    elif texto.startswith('$adivinhar'):
         numero_secreto = random.randint(1, 10)
-        await message.channel.send("🎲 Tente adivinhar de 1 a 10!")
+        await message.channel.send("🎲 Adivinhe de 1 a 10!")
 
-    elif message.content.isdigit():
-        palpite = int(message.content)
+    elif texto.isdigit():
+        palpite = int(texto)
 
         if palpite == numero_secreto:
             await message.channel.send("🎉 Acertou!")
@@ -151,4 +193,4 @@ async def on_message(message):
 # =========================
 # RUN
 # =========================
-client.run("token aqui")
+client.run("SEU_TOKEN_AQUI")
